@@ -11,15 +11,13 @@ export default function DashboardPage() {
 
         <main className="container mx-auto px-4 py-6 sm:px-8">
             <div className="mb-6 sm:mb-8">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName ?? user?.emailAddresses[0].emailAddress}!
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome back, {user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "there"}!
                 </h1>
                 <p className="text-gray-600">
                     Here&apos;s what&apos;s happening with your account today.
                     </p>
             </div>
-
         </main>
-      <h1>Dashboard</h1>
     </div>
   );
 }
