@@ -3,16 +3,34 @@
 import Navbar from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import { useBoards } from "@/lib/hooks/useBoards";
-import { Plus } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { Loader2, Plus } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { createBoard } = useBoards();
+  const { createBoard, boards, loading, error } = useBoards();
 
   const handleCreateBoard = async () => {
     await createBoard({ title: "New Board" });
   };
+
+  if (loading) {
+    return ( 
+      <div className="flex items-center justify-center">
+        <Loader2 className="animate-spin h-6 w-6 mr-2" />
+        <span>Loading your boards...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center">
+        <h2> Error loading boards</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
