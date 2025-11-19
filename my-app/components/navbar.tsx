@@ -14,7 +14,7 @@ export default function Navbar({boardTitle, onEditBoard}: Props) {
   const { isSignedIn, user } = useUser();
   const pathname = usePathname();
   const isDashboardPage = pathname === "/dashboard";
-  const isBoardPage = pathname.startsWith("/board");
+  const isBoardPage = pathname.startsWith("/boards");
 
 
 if (isDashboardPage) {

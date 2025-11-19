@@ -31,9 +31,10 @@ export default function SupabaseProvider({
         accessToken: () => session?.getToken(),
       }
     );
-
-    setSupabase(client);
-    setIsLoaded(true);
+    Promise.resolve().then(() => {
+      setSupabase(client);
+      setIsLoaded(true);
+    });
   }, [session]);
 
   return (
