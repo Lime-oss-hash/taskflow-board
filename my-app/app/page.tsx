@@ -170,7 +170,7 @@ export default function DashboardPage() {
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between"> 
-                      <div className={'w-4 h-4 ${board.color} rounded'} />
+                      <div className={`w-4 h-4 ${board.color} rounded`} />
                       <Badge className="text-xs" variant="secondary">New</Badge>
                     </div>
                   </CardHeader>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between"> 
-                      <div className={'w-4 h-4 ${board.color} rounded'} />
+                      <div className={`w-4 h-4 ${board.color} rounded`} />
                       <Badge className="text-xs" variant="secondary">New</Badge>
                     </div>
                   </CardHeader>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
               </Link>
             </div>
             ))}
-            <Card className="mt-4border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group">
+            <Card className="mt-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group">
               <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
                 <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 group-hover:text-blue-600 mb-2" />
                 <p className="text-sm sm:text-base text-gray-600 group-hover:text-blue-600 font-medium">Create new board</p>

@@ -4,6 +4,10 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const { getToken } = await auth();
+  
+  // Get the Supabase token from Clerk
+  const token = await getToken({ template: 'supabase' });
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +23,11 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {}
+        },
+      },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       },
     }
