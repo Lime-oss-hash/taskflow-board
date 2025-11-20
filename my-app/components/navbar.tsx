@@ -1,3 +1,8 @@
+/**
+ * SECTION: Imports & Configuration
+ * FUNCTION: Import necessary dependencies, components, and configure the file.
+ * INCLUDED: "use client" directive, Next.js components, Lucide icons, UI components, Clerk auth, and hooks.
+ */
 "use client";
 
 import Link from "next/link";
@@ -7,6 +12,11 @@ import { SignInButton, SignUpButton, useUser, UserButton } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { Badge } from "./ui/badge";
 
+/**
+ * SECTION: Props Interface
+ * FUNCTION: Define the expected props for the Navbar component.
+ * INCLUDED: boardTitle (optional), onEditBoard (optional), onFilterClick (optional), filterCount (optional).
+ */
 interface Props {
   boardTitle?: string;
   onEditBoard?: () => void;
@@ -15,17 +25,32 @@ interface Props {
   filterCount?: number;
 }
 
+/**
+ * SECTION: Navbar Component
+ * FUNCTION: Main navigation component for the application.
+ * INCLUDED: Logic for different page views (Dashboard, Board, Default) and user authentication state.
+ */
 export default function Navbar({
   boardTitle,
   onEditBoard,
   onFilterClick,
   filterCount = 0,
 }: Props) {
+  /**
+   * SECTION: Hooks & State
+   * FUNCTION: Initialize hooks and derive state variables.
+   * INCLUDED: User authentication (useUser), current path (usePathname), and page type checks (isDashboardPage, isBoardPage).
+   */
   const { isSignedIn, user } = useUser();
   const pathname = usePathname();
   const isDashboardPage = pathname === "/dashboard";
   const isBoardPage = pathname.startsWith("/boards/");
 
+  /**
+   * SECTION: Dashboard View
+   * FUNCTION: Render the navbar specifically for the dashboard page.
+   * INCLUDED: Trello logo, title, and UserButton.
+   */
   if (isDashboardPage) {
     return (
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -45,6 +70,11 @@ export default function Navbar({
     );
   }
 
+  /**
+   * SECTION: Board View
+   * FUNCTION: Render the navbar for a specific board page.
+   * INCLUDED: Back button, Board title, Edit board button, Filter button, and UserButton.
+   */
   if (isBoardPage) {
     return (
       <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -93,6 +123,11 @@ export default function Navbar({
     );
   }
 
+  /**
+   * SECTION: Default View
+   * FUNCTION: Render the default navbar for pages like the landing page.
+   * INCLUDED: Logo, Sign In/Sign Up buttons (if signed out), or Dashboard link/UserButton (if signed in).
+   */
   return (
     <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
