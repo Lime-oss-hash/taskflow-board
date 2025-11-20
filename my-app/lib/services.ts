@@ -28,9 +28,11 @@ export const boardService = {
     supabase: SupabaseClient,
     board: Omit<Board, "id" | "created_at" | "updated_at">
   ): Promise<Board> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_id, ...boardData } = board;
     const { data, error } = await supabase
       .from("boards")
-      .insert(board)
+      .insert(boardData)
       .select()
       .single();
 
