@@ -30,7 +30,9 @@ export const boardService = {
   ): Promise<Board> {
     const { data, error } = await supabase
       .from("boards")
-      .insert(board)
+            // Omit user_id - let database default (requesting_user_id()) handle it
+      const { user_id, ...boardData } = board;
+      .insert(boardData)
       .select()
       .single();
 
