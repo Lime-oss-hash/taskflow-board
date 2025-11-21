@@ -24,6 +24,20 @@ export const boardService = {
     return data || [];
   },
 
+  async createTask(
+    supabase: SupabaseClient,
+    task: Omit<Task, "id" | "created_at" | "updated_at">
+  ): Promise<Task> {
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert(task)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   async createBoard(
     supabase: SupabaseClient,
     board: Omit<Board, "id" | "created_at" | "updated_at">
