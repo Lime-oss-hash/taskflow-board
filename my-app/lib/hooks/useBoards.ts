@@ -1,7 +1,7 @@
 "use client";
-import { boardDataService } from "@/lib/services";
+import { boardDataService, taskService } from "@/lib/services";
 import { useUser } from "@clerk/nextjs";
-import { Board, ColumnWithTasks } from "../supabase/models";
+import { Board, ColumnWithTasks, Task } from "../supabase/models";
 import { useEffect, useState } from "react";
 import { useSupabase } from "../supabase/SupabaseProvider";
 import { boardService } from "@/lib/services";
@@ -150,6 +150,40 @@ export function useBoard(boardId: string) {
     }
   }
 
+
+  async function moveTask(taskId: string, newColumnId: string, newOrder: number) {
+    try {
+      await taskService.moveTask(supabase!, taskId, newColumnId, newOrder);
+      
+      setColumns((prev) => {
+        const newColumns = [...prev]
+
+        // Find and remove task from the old column
+        let taskToMove: Task | null = null;
+        for (const col of newColumns) {
+          const taskIndex = col.tasks.findIndex((task) => task.id === taskId);
+          if (taskIndex !== -1) {
+            taskToMove = col.tasks [taskIndex];
+            col.tasks.splice(taskIndex, 1);
+            break;
+          }
+        }
+
+        if (taskToMove) {
+          // Add task to new column
+          const targetColumn = newColumns.find(col => col.id === newColumnId);
+          if (targetColumn) {
+            targetColumn.tasks.splice(newOrder, 0, taskToMove);
+          }
+        }
+
+        return newColumns;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to move task.");
+    }
+  }
+
   return {
     board,
     columns,
@@ -158,5 +192,6 @@ export function useBoard(boardId: string) {
     updateBoard,
     createRealTask,
     setColumns,
+    moveTask,
   };
 }

@@ -124,9 +124,25 @@ export const taskService = {
 
     return data || [];
   },
-}
 
+  async moveTask(
+    supabase: SupabaseClient,
+    taskId: string,
+    newColumnId: string,
+    newOrder: number
+  ) {
+    const { data, error } = await supabase
+      .from("tasks")
+      .update({
+        column_id: newColumnId,
+        sort_order: newOrder,
+      })
+      .eq("id", taskId);
 
+    if (error) throw error;
+    return data;
+  },
+};
 
 export const boardDataService = {
   async getBoardWithColumns(supabase: SupabaseClient, boardId: string) {
@@ -137,12 +153,12 @@ export const boardDataService = {
 
     if (!board) throw new Error("Board not found");
 
-    const tasks = await taskService.getTasksByBoard(supabase, boardId)
+    const tasks = await taskService.getTasksByBoard(supabase, boardId);
 
     const columnsWithTasks = columns.map((column) => ({
       ...column,
       tasks: tasks.filter((task) => task.column_id === column.id),
-    }))
+    }));
 
     return {
       board,

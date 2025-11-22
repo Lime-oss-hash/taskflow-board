@@ -24,7 +24,7 @@ import { ColumnWithTasks, Task } from "@/lib/supabase/models";
 import { Label } from "@radix-ui/react-label";
 import { MoreHorizontal, Plus } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -33,6 +33,10 @@ import {
   DragStartEvent,
   rectIntersection,
   useDroppable,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  TouchSensor,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -61,7 +65,7 @@ function DroppableColumn({
         isOver ? "bg-blue-50" : ""
       }`}
     >
-      <div className="bg-white rounded-lg shadow-sm border">
+      <div className={`bg-white rounded-lg shadow-sm border ${isOver ? "ring-2 ring-blue-300" : ""}`}>
         {/* Column Header */}
         <div className="p-3 sm:p-4 border-b">
           <div className="flex items-center justify-between">
@@ -286,7 +290,7 @@ function TaskOverlay({ task }: { task: Task }) {
 
 export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
-  const { board, updateBoard, columns, createRealTask, setColumns } =
+  const { board, updateBoard, columns, createRealTask, setColumns, moveTask } =
     useBoard(id);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -296,6 +300,26 @@ export default function BoardPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+    const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+
+  );
+
+
+  // Track last drag operation to prevent infinite updates
+  const lastDragRef = useRef<{
+    activeId: string | null;
+    overId: string | null;
+  }>({
+    activeId: null,
+    overId: null,
+  });
+
 
   async function handleUpdateBoard(e: React.FormEvent) {
     e.preventDefault();
@@ -357,6 +381,9 @@ export default function BoardPage() {
     if (task) {
       setActiveTask(task);
     }
+
+    // Reset last drag tracking
+    lastDragRef.current = { activeId: taskId, overId: null };
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -366,24 +393,45 @@ export default function BoardPage() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
+    if (activeId === overId) return;
+
+    // Check if this is the same drag operation as last time
+    if (
+      lastDragRef.current.activeId === activeId &&
+      lastDragRef.current.overId === overId
+    ) {
+      return; // Don't update if nothing changed
+    }
+
+    // Update last drag tracking
+    lastDragRef.current = { activeId, overId };
+
     const sourceColumn = columns.find((col) =>
       col.tasks.some((task) => task.id === activeId)
     );
-    const targetColumn = columns.find((col) =>
+
+    // Check if over a task or a column
+    let targetColumn = columns.find((col) =>
       col.tasks.some((task) => task.id === overId)
     );
+
+    // If not over a task, check if over a column
+    if (!targetColumn) {
+      targetColumn = columns.find((col) => col.id === overId);
+    }
 
     if (!sourceColumn || !targetColumn) return;
 
     if (sourceColumn.id === targetColumn.id) {
+      // Same column - reorder
       const activeIndex = sourceColumn.tasks.findIndex(
         (task) => task.id === activeId
       );
-      const overIndex = sourceColumn.tasks.findIndex(
+      const overIndex = targetColumn.tasks.findIndex(
         (task) => task.id === overId
       );
 
-      if (activeIndex === overIndex) {
+      if (activeIndex !== overIndex && overIndex !== -1) {
         setColumns((prev: ColumnWithTasks[]) => {
           const newColumns = [...prev];
           const column = newColumns.find((col) => col.id === sourceColumn.id);
@@ -396,10 +444,79 @@ export default function BoardPage() {
           return newColumns;
         });
       }
+    } else {
+      // Different column - move task
+      setColumns((prev: ColumnWithTasks[]) => {
+        const newColumns = [...prev];
+        const sourceCol = newColumns.find((col) => col.id === sourceColumn.id);
+        const targetCol = newColumns.find((col) => col.id === targetColumn.id);
+
+        if (sourceCol && targetCol) {
+          const activeIndex = sourceCol.tasks.findIndex(
+            (task) => task.id === activeId
+          );
+          const overIndex = targetCol.tasks.findIndex(
+            (task) => task.id === overId
+          );
+
+          if (activeIndex !== -1) {
+            const [movedTask] = sourceCol.tasks.splice(activeIndex, 1);
+
+            // Insert at the position of the over task, or at the end if over the column
+            if (overIndex !== -1) {
+              targetCol.tasks.splice(overIndex, 0, movedTask);
+            } else {
+              targetCol.tasks.push(movedTask);
+            }
+          }
+        }
+
+        return newColumns;
+      });
     }
   }
 
-  function handleDragEnd(event: DragEndEvent) {}
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    
+    const taskId = active.id as string;
+    const overId = over.id as string;
+
+    const targetColumn = columns.find((col) => col.id === overId);
+    if (targetColumn) {
+       const sourceColumn = columns.find((col) => 
+        col.tasks.some((task) => task.id === taskId)
+      );
+
+      if (sourceColumn && sourceColumn.id !== targetColumn.id) {
+        await moveTask(taskId, targetColumn.id, targetColumn.tasks.length);
+      }
+    } else {
+        // Check to see if were dropping on another task
+        const sourceColumn = columns.find((col) => 
+            col.tasks.some((task) => task.id === taskId)
+          );
+
+        const targetColumn = columns.find((col) => col.id === overId);
+
+        if (sourceColumn && targetColumn) {
+          const oldIndex = sourceColumn.tasks.findIndex(
+            (task) => task.id === taskId
+          );
+          const newIndex = targetColumn.tasks.findIndex(
+            (task) => task.id === overId
+          );
+
+          if (oldIndex !==  newIndex ) {
+            await moveTask(taskId, targetColumn.id, newIndex);
+          }
+        }
+
+    }
+
+
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -603,7 +720,7 @@ export default function BoardPage() {
         {/* Board Columns */}
 
         <DndContext
-          sensors={[]}
+          sensors={sensors}
           collisionDetection={rectIntersection}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
