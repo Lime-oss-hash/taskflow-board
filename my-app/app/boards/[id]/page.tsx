@@ -873,7 +873,6 @@ export default function BoardPage() {
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="submit">Update Column</Button>
               <Button
                 type="button"
                 onClick={() => {
