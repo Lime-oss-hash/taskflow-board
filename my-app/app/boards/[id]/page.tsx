@@ -297,7 +297,11 @@ export default function BoardPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newColor, setNewColor] = useState("");
 
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isCreatingColumn, setIsCreatingColumn] = useState(false);
+    const [isEditingColumn, setIsEditingColumn] = useState(false);
+    const [newColumnTitle, setNewColumnTitle] = useState("");
+
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -519,6 +523,7 @@ export default function BoardPage() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       <Navbar
         boardTitle={board?.title}
@@ -747,6 +752,13 @@ export default function BoardPage() {
               </DroppableColumn>
             ))}
 
+            <div className="w-full lg:flex-shrink-0 lg:w-80">
+              <Button variant="outline" className="w-full h-full min-h-[200px] border-dashsed broder-2 text-gray-500 hover:text-gray-700">
+                <Plus />
+                Add another list
+              </Button>
+            </div>
+
             <DragOverlay>
               {activeTask ? <TaskOverlay task={activeTask} /> : null}
             </DragOverlay>
@@ -754,5 +766,18 @@ export default function BoardPage() {
         </DndContext>
       </main>
     </div>
+
+          <Dialog open={isCreatingColumn} onOpenChange={setIsCreatingColumn}>
+        <DialogContent className="w-[95vw] max-w-[425px] mx-auto">
+          <DialogHeader>
+            <DialogTitle>Create Column</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Filter task by priority, assignee, or due date
+            </p>
+          </DialogHeader>
+
+            </DialogContent>
+    </Dialog>
+    </>
   );
 }
