@@ -24,6 +24,58 @@ export const boardService = {
     return data || [];
   },
 
+  // Fetch boards with task count using Supabase joins
+  async getBoardsWithTaskCount(
+    supabase: SupabaseClient,
+    userId: string
+  ): Promise<(Board & { taskCount: number })[]> {
+    // Step 1: Get all boards for the user
+    const { data: boards, error: boardsError } = await supabase
+      .from("boards")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (boardsError) throw boardsError;
+    if (!boards || boards.length === 0) return [];
+
+    // Step 2: For each board, count tasks across all columns
+    const boardsWithCounts = await Promise.all(
+      boards.map(async (board) => {
+        // Get all columns for this board, then count tasks in those columns
+        const { data: columns, error: columnsError } = await supabase
+          .from("columns")
+          .select("id")
+          .eq("board_id", board.id);
+
+        if (columnsError) {
+          console.error("Error fetching columns:", columnsError);
+          return { ...board, taskCount: 0 };
+        }
+
+        if (!columns || columns.length === 0) {
+          return { ...board, taskCount: 0 };
+        }
+
+        // Count tasks in all columns for this board
+        const columnIds = columns.map((col) => col.id);
+        const { count, error: tasksError } = await supabase
+          .from("tasks")
+          .select("*", { count: "exact", head: true })
+          .in("column_id", columnIds);
+
+        if (tasksError) {
+          console.error("Error counting tasks:", tasksError);
+          return { ...board, taskCount: 0 };
+        }
+
+        return { ...board, taskCount: count || 0 };
+      })
+    );
+
+    return boardsWithCounts;
+  },
+
   async createTask(
     supabase: SupabaseClient,
     task: Omit<Task, "id" | "created_at" | "updated_at">

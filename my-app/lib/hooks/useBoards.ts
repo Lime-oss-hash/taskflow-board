@@ -37,8 +37,12 @@ export function useBoards() {
     try {
       setLoading(true);
       setError(null);
-      const data = await boardService.getBoards(supabase!, user.id);
-      setBoards(data);
+      // Use the new method that fetches boards with task counts
+      const data = await boardService.getBoardsWithTaskCount(
+        supabase!,
+        user.id
+      );
+      setBoards(data as any); // Type assertion needed since we're adding taskCount
     } catch (err) {
       console.error("loadBoards error:", err);
       const errorMessage =
@@ -245,11 +249,13 @@ export function useBoard(boardId: string) {
     columns,
     loading,
     error,
-    updateBoard,
-    createRealTask,
     setColumns,
-    moveTask,
+    updateBoard,
+    refetch: loadBoard,
     createColumn,
+    moveTask,
+    createTask: createRealTask,
+    createRealTask, // Export with original name for backward compatibility
     updateColumn,
   };
 }

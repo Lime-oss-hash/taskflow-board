@@ -25,7 +25,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Board } from "@/lib/supabase/models";
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -45,16 +44,8 @@ export default function DashboardPage() {
     },
   });
 
-  // Note: Board type doesn't include columns data from useBoards()
-  // To get actual task counts, you'd need to fetch columns separately
-  // For now, adding placeholder taskCount of 0
-  const boardsWithTaskCount = boards.map((board: Board) => ({
-    ...board,
-    taskCount: 0, // Placeholder - would need to fetch column/task data separately
-  }));
-
-  // Filter boards based on search and date range
-  const filteredBoards = boardsWithTaskCount.filter((board) => {
+  // boards from useBoards() now include taskCount from the database
+  const filteredBoards = boards.filter((board: any) => {
     const matchesSearch = board.title
       .toLowerCase()
       .includes(filters.search.toLowerCase());
@@ -137,7 +128,7 @@ export default function DashboardPage() {
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
                     {
-                      boards.filter((board) => {
+                      boards.filter((board: any) => {
                         const updatedAt = new Date(board.updated_at);
                         const oneWeekAgo = new Date();
                         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -174,14 +165,18 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-600">
-                    Total Boards
+                    Total Tasks
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {boards.length}
+                    {boards.reduce(
+                      (total: number, board: any) =>
+                        total + (board.taskCount || 0),
+                      0
+                    )}
                   </p>
                 </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Trello className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Trello className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -249,14 +244,14 @@ export default function DashboardPage() {
             <div>No boards yet</div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {filteredBoards.map((board, key) => (
+              {filteredBoards.map((board: any, key) => (
                 <Link href={`/boards/${board.id}`} key={key}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <div className={`w-4 h-4 ${board.color} rounded`} />
                         <Badge className="text-xs" variant="secondary">
-                          New
+                          {board.taskCount || 0} tasks
                         </Badge>
                       </div>
                     </CardHeader>
@@ -296,7 +291,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div>
-              {filteredBoards.map((board, key) => (
+              {filteredBoards.map((board: any, key) => (
                 <div key={key} className={key > 0 ? "mt-4" : undefined}>
                   <Link href={`/boards/${board.id}`}>
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
@@ -304,7 +299,7 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between">
                           <div className={`w-4 h-4 ${board.color} rounded`} />
                           <Badge className="text-xs" variant="secondary">
-                            New
+                            {board.taskCount || 0} tasks
                           </Badge>
                         </div>
                       </CardHeader>
