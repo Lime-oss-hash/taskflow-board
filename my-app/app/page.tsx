@@ -9,12 +9,14 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { Rocket } from "lucide-react";
 import { Grid3x3 } from "lucide-react";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { Input,  } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CardHeader } from "@/components/ui/card";
 import Link from "next/link";
 import { Dialog } from "@radix-ui/react-dialog";
 import { DialogHeader, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Board } from "@/lib/supabase/models";
 
 
 export default function DashboardPage() {
@@ -22,6 +24,25 @@ export default function DashboardPage() {
   const { createBoard, boards, loading, error } = useBoards();
   const[viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false)
+
+  const [filters, setFilters] = useState ({
+    search: "",
+    dateRange: {
+      start: null as string | null,
+      end: null as string | null,
+    },
+    taskCount: {
+      min: null as number | null,
+      max: null as number | null,
+    }
+  });
+
+  const filteredBoards = boards.filter((board: Board) => {
+    const matchesSearch = board.title.toLowerCase().includes(filters.search.toLowerCase());
+    console.log (filters.search)
+    return matchesSearch;
+  })
+
 
   const handleCreateBoard = async () => {
     await createBoard({ title: "New Board" });
@@ -160,7 +181,7 @@ export default function DashboardPage() {
           {/* search board */}
           <div className="relative mb-4 sm:mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input id="search" placeholder="Search boards..." className="pl-10"/>
+            <Input id="search" placeholder="Search boards..." className="pl-10" onChange={(e) => setFilters((prev) => ({...prev, search: e.target.value}))}/>
           </div>
 
         {/* Boards Grid/List */}
@@ -168,7 +189,7 @@ export default function DashboardPage() {
           <div>No boards yet</div>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {boards.map((board, key) => (
+            {filteredBoards.map((board, key) => (
               <Link href={`/boards/${board.id}`} key={key}>
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
                   <CardHeader className="pb-3">
@@ -251,6 +272,49 @@ export default function DashboardPage() {
             <DialogTitle>Filter Board</DialogTitle>
             <p className="text-sm text-gray-600">Filter boards by title, date, or task count.</p>
           </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+            <Label>Search</Label>
+            <Input id="search" placeholder="Search board titles... " onChange={(e) => setFilters((prev) => ({...prev, search: e.target.value}))}/>
+
+            </div>
+            <div className="space-y-2">
+            <Label>Date Range</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+            <Label className="text-xs">Start Date</Label>
+            <Input type="date" onChange={(e) => setFilters((prev) => ({...prev, dateRange: { ...prev.dateRange, start: e.target.value || null}}))}/>
+            </div>
+            <div>
+            <Label className="text-xs">End Date</Label>
+            <Input type="date" onChange={(e) => setFilters((prev) => ({...prev, dateRange: { ...prev.dateRange, end: e.target.value || null}}))}/>
+            </div>
+            </div>
+            </div>
+            <div className="space-y-2">
+            <Label>Task Count</Label>
+            <div>
+            <div>
+            <Label className="text-xs">Minimum</Label>
+            <Input type="number" min="0" placeholder="Min task" onChange={(e) => setFilters((prev) => ({...prev, taskCount: { ...prev.taskCount, min: e.target.value ? Number(e.target.value) : null}}))}/>
+            </div>
+            <div>
+            <Label className="text-xs">Maximum</Label>
+            <Input type="number" min="0" placeholder="Max task" onChange={(e) => setFilters((prev) => ({...prev, taskCount: { ...prev.taskCount, max: e.target.value ? Number(e.target.value) : null}}))}/>
+            </div>
+            </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between pt-4 space-y-2 sm:space-y-0 sm:space-x-2">
+              <Button variant="outline">
+                Clear Filters
+              </Button>
+              <Button>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+
         </DialogContent>
       </Dialog>
 
