@@ -4,6 +4,7 @@ import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { useBoards } from "@/lib/hooks/useBoards";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { Filter, List, Loader2, Plus, Search, Trello } from "lucide-react";
 import {
   Card,
@@ -25,12 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { usePlan } from "@/lib/contexts/PlanContext";
 
 export default function DashboardPage() {
   const { user } = useUser();
   const { createBoard, boards, loading, error } = useBoards();
+  const router = useRouter();
+  const { isFreeUser } = usePlan();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState<boolean>(false);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -43,6 +48,10 @@ export default function DashboardPage() {
       max: null as number | null,
     },
   });
+
+  // Free user can create the board if they have no boards
+
+  const canCreateBoard = !isFreeUser || boards.length < 1;
 
   // boards from useBoards() now include taskCount from the database
   const filteredBoards = boards.filter((board: any) => {
@@ -74,6 +83,10 @@ export default function DashboardPage() {
   }
 
   const handleCreateBoard = async () => {
+    if (!canCreateBoard) {
+      setShowUpgradeDialog(true);
+      return;
+    }
     await createBoard({ title: "New Board" });
   };
 
@@ -201,7 +214,13 @@ export default function DashboardPage() {
                 Your Boards
               </h2>
               <p className="text-gray-600">Manage your projects and tasks</p>
+              {isFreeUser && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Free plan: {boards.length}/1 boards used
+                </p>
+              )}
             </div>
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0 sm:space-x-4">
               <div className="flex items-center space-x-2 rounded bg-white border p-1">
                 <Button
@@ -447,16 +466,34 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-between pt-4 space-y-2 sm:space-y-0 sm:space-x-2">
-              <Button
-                variant="outline"
-                onClick={clearFilters}
-              >
+              <Button variant="outline" onClick={clearFilters}>
                 Clear Filters
               </Button>
               <Button onClick={() => setIsFilterOpen(false)}>
                 Apply Filters
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade to Create More Boards</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Free users can only create one board. Upgrade to Pro or Enterprise
+              to create unlimited boards.
+            </p>
+          </DialogHeader>
+          <div className="flex justify-end spaec-x-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowUpgradeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => router.push("/pricing")}>View Plans</Button>
           </div>
         </DialogContent>
       </Dialog>
