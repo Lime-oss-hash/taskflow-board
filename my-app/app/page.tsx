@@ -59,6 +59,20 @@ export default function DashboardPage() {
     return matchesSearch && matchesDateRange;
   });
 
+  function clearFilters() {
+    setFilters({
+      search: "",
+      dateRange: {
+        start: null,
+        end: null,
+      },
+      taskCount: {
+        min: null,
+        max: null,
+      },
+    });
+  }
+
   const handleCreateBoard = async () => {
     await createBoard({ title: "New Board" });
   };
@@ -94,10 +108,6 @@ export default function DashboardPage() {
           <p className="text-gray-600">
             Here&apos;s what&apos;s happening with your boards today.
           </p>
-          <Button className="w-full sm:w-auto" onClick={handleCreateBoard}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create New Board
-          </Button>
         </div>
 
         {/* Stats */}
@@ -439,13 +449,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row justify-between pt-4 space-y-2 sm:space-y-0 sm:space-x-2">
               <Button
                 variant="outline"
-                onClick={() =>
-                  setFilters({
-                    search: "",
-                    dateRange: { start: null, end: null },
-                    taskCount: { min: null, max: null },
-                  })
-                }
+                onClick={clearFilters}
               >
                 Clear Filters
               </Button>
