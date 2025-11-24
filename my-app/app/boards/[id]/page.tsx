@@ -1,51 +1,110 @@
+/**
+ * ============================================================================
+ * BOARD PAGE - Trello Clone
+ * ============================================================================
+ *
+ * This is the main board view where users can:
+ * - View all columns and tasks for a specific board
+ * - Drag and drop tasks between columns
+ * - Create new tasks and columns
+ * - Edit board details
+ * - Filter tasks by priority, assignee, and due date
+ *
+ * KEY CONCEPTS:
+ * - Uses @dnd-kit for smooth drag-and-drop functionality
+ * - Implements real-time state management with Supabase
+ * - Follows React best practices for performance
+ *
+ * IMPORTANT: This is a Client Component (uses hooks, event handlers)
+ * ============================================================================
+ */
 "use client";
+
+// ============================================================================
+// IMPORTS - Organized by category
+// ============================================================================
+
+// --- UI Components ---
+// Custom components for the app layout and structure
 import Navbar from "@/components/navbar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
+// Shadcn UI components - pre-built, accessible UI elements
+import { Badge } from "@/components/ui/badge"; // For displaying task counts
+import { Button } from "@/components/ui/button"; // Buttons throughout the app
+import { Card, CardContent } from "@/components/ui/card"; // Task card containers
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, // Modal overlay
+  DialogContent, // Modal content container
+  DialogHeader, // Modal header section
+  DialogTitle, // Modal title text
+  DialogTrigger, // Button that opens the modal
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Text input fields
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, // Dropdown selector
+  SelectContent, // Dropdown options container
+  SelectItem, // Individual option
+  SelectTrigger, // Button that opens dropdown
+  SelectValue, // Shows selected value
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { useBoard } from "@/lib/hooks/useBoards";
-import { ColumnWithTasks, Task } from "@/lib/supabase/models";
-import { Label } from "@radix-ui/react-label";
+import { Textarea } from "@/components/ui/textarea"; // Multi-line text input
+import { Label } from "@radix-ui/react-label"; // Form labels
+
+// --- Icons ---
+// Lucide React provides clean, consistent icons
 import { Calendar, Pointer, MoreHorizontal, Plus } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useState, useRef } from "react";
-import { boardService } from "@/lib/services";
-import { useSupabase } from "@/lib/supabase/SupabaseProvider";
+
+// --- Data & State Management ---
+import { useBoard } from "@/lib/hooks/useBoards"; // Custom hook for board data
+import { ColumnWithTasks, Task } from "@/lib/supabase/models"; // TypeScript types
+import { boardService } from "@/lib/services"; // API functions
+import { useSupabase } from "@/lib/supabase/SupabaseProvider"; // Database connection
+
+// --- React Hooks ---
+import { useParams } from "next/navigation"; // Get URL parameters
+import { useState, useRef } from "react"; // State and refs
+
+// --- Drag and Drop Library (@dnd-kit) ---
+// This library handles all the drag-and-drop functionality
 import {
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragOverlay,
-  DragStartEvent,
-  rectIntersection,
-  useDroppable,
-  useSensor,
-  useSensors,
-  PointerSensor,
-  TouchSensor,
+  DndContext, // Wrapper that enables drag-and-drop
+  DragEndEvent, // TypeScript type for when drag completes
+  DragOverEvent, // TypeScript type for when dragging over items
+  DragOverlay, // Shows a preview of the item being dragged
+  DragStartEvent, // TypeScript type for when drag starts
+  rectIntersection, // Algorithm to detect overlapping elements
+  useDroppable, // Hook to make an element accept drops
+  useSensor, // Hook to configure input devices
+  useSensors, // Hook to combine multiple sensors
+  PointerSensor, // Handles mouse/touch input
+  TouchSensor, // Handles touch screen input
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
+
+import { CSS } from "@dnd-kit/utilities"; // CSS transform utilities
+
 import {
-  useSortable,
-  SortableContext,
-  verticalListSortingStrategy,
+  useSortable, // Hook for items that can be sorted
+  SortableContext, // Wrapper for sortable items
+  verticalListSortingStrategy, // Algorithm for vertical list sorting
 } from "@dnd-kit/sortable";
+
+// ============================================================================
+// COMPONENT: DroppableColumn
+// ============================================================================
+/**
+ * A column component that can accept dragged tasks
+ *
+ * WHAT IT DOES:
+ * - Displays a column header with title and task count
+ * - Contains all tasks for this column
+ * - Accepts tasks being dropped into it
+ * - Provides visual feedback when hovering with a dragged task
+ *
+ * HOW IT WORKS:
+ * - useDroppable hook makes it detect when tasks are dragged over
+ * - isOver boolean tells us if something is being dragged over this column
+ * - Changes background color to show it's a valid drop target
+ */
 
 function DroppableColumn({
   column,
@@ -58,16 +117,23 @@ function DroppableColumn({
   onCreateTask: (taskData: any) => Promise<void>;
   onEditColumn: (column: ColumnWithTasks) => void;
 }) {
+  // DRAG-AND-DROP SETUP
+  // useDroppable makes this column accept dropped tasks
+  // - setNodeRef: Attach this to the div to track it
+  // - isOver: Boolean that's true when something is dragged over this column
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
     <div
+      // setNodeRef connects this div to the drag-and-drop system
       ref={setNodeRef}
+      // Conditional styling: Shows blue background when dragging over
       className={`w-full lg:flex-shrink-0 lg:w-80 ${
         isOver ? "bg-blue-50" : ""
       }`}
     >
       <div
+        // Another visual indicator: Blue ring when dragging over
         className={`bg-white rounded-lg shadow-sm border ${
           isOver ? "ring-2 ring-blue-300" : ""
         }`}
@@ -361,6 +427,14 @@ export default function BoardPage() {
     overId: null,
   });
 
+  function clearFilters() {
+    setFilters({
+      priority: [] as string[],
+      assignee: [] as string[],
+      dueDate: null as string | null,
+    });
+  }
+
   async function handleUpdateBoard(e: React.FormEvent) {
     e.preventDefault();
 
@@ -518,6 +592,40 @@ export default function BoardPage() {
     setEditingColumnTitle(column.title);
   }
 
+  const filteredColumns = columns.map((column) => ({
+    ...column,
+    tasks: column.tasks.filter((task) => {
+      // Filter by priority
+      if (
+        filters.priority.length > 0 &&
+        !filters.priority.includes(task.priority)
+      ) {
+        return false;
+      }
+
+      // Filter by due date
+      if (filters.dueDate && task.due_date) {
+        const taskDate = new Date(task.due_date).toDateString();
+        const filterDate = new Date(filters.dueDate).toDateString();
+
+        if (taskDate !== filterDate) {
+          return false;
+        }
+      }
+
+      // Filter by assignee
+      if (
+        filters.assignee.length > 0 &&
+        task.assignee &&
+        !filters.assignee.includes(task.assignee)
+      ) {
+        return false;
+      }
+
+      return true;
+    }),
+  }));
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
@@ -527,9 +635,15 @@ export default function BoardPage() {
             setNewTitle(board?.title ?? "");
             setNewColor(board?.color ?? "");
             setIsEditingTitle(true);
+
+            // This code is counting the total number of active filters to display a badge number on filter button.
           }}
           onFilterClick={() => setIsFilterOpen(true)}
-          filterCount={2}
+          filterCount={Object.values(filters).reduce(
+            (count, v) =>
+              count + (Array.isArray(v) ? v.length : v != null ? 1 : 0),
+            0
+          )}
         />
 
         <Dialog open={isEditingTitle} onOpenChange={setIsEditingTitle}>
@@ -675,11 +789,21 @@ export default function BoardPage() {
               </div>
               <div className="space-y-2">
                 <Label>Due Date</Label>
-                <Input type="date" />
+                <Input
+                  type="date"
+                  value={filters.dueDate || ""}
+                  onChange={(e) =>
+                    handleFilterChange("dueDate", e.target.value || null)
+                  }
+                />
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button type="button" variant={"outline"}>
+                <Button
+                  type="button"
+                  variant={"outline"}
+                  onClick={clearFilters}
+                >
                   Clear Filters
                 </Button>
                 <Button type="button" onClick={() => setIsFilterOpen(false)}>
@@ -785,7 +909,7 @@ export default function BoardPage() {
             onDragEnd={handleDragEnd}
           >
             <div className="flex flex-col lg:flex-row lg:space-x-6 lg:overflow-x-auto lg:pb-6 lg:px-2 lg:mx-2 lg:[&::-webkit-scrollbar]:h-2 lg:[&::-webkit-scrollbar-track]:bg-gray-100 lg:[&::-webkit-scrollbar-thumb]:bg-gray-300 lg:[&::-webkit-scrollbar-thumb]:rounded-full space-y-4 lg:space-y-0">
-              {columns.map((column, key) => (
+              {filteredColumns.map((column, key) => (
                 <DroppableColumn
                   key={key}
                   column={column}
