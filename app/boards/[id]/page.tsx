@@ -72,6 +72,10 @@ import {
   useSensors, // Hook to combine multiple sensors
   MouseSensor, // Handles mouse input
   TouchSensor, // Handles touch screen input
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
+  CollisionDetection,
 } from "@dnd-kit/core";
 
 import { CSS } from "@dnd-kit/utilities"; // CSS transform utilities
@@ -115,7 +119,13 @@ function DroppableColumn({
   // useDroppable makes this column accept dropped tasks
   // - setNodeRef: Attach this to the div to track it
   // - isOver: Boolean that's true when something is dragged over this column
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+    data: {
+      type: "column",
+      column,
+    },
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -370,6 +380,29 @@ function TaskOverlay({ task }: { task: Task }) {
   );
 }
 
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First, attempt to use the pointer coordinates to find collisions
+  // This is the most intuitive mode - "what am I pointing at?"
+  const pointerCollisions = pointerWithin(args);
+
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+
+  // If the pointer isn't over anything (e.g. between items),
+  // try finding the intersection with the dragged item's rectangle
+  const rectCollisions = rectIntersection(args);
+
+  if (rectCollisions.length > 0) {
+    return rectCollisions;
+  }
+
+  // As a last resort, find the closest corners.
+  // This helps with snapping when slightly outside, but we prioritize
+  // exact matches (pointer/rect) first to avoid jumping to wrong columns.
+  return closestCorners(args);
+};
+
 export default function BoardPage() {
   const { id } = useParams<{ id: string }>();
   const { supabase } = useSupabase();
@@ -414,7 +447,7 @@ export default function BoardPage() {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250,
+        delay: 200, // Reduced from 250ms to make it easier to grab
         tolerance: 5,
       },
     })
@@ -966,7 +999,7 @@ export default function BoardPage() {
 
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
