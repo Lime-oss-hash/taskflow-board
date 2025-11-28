@@ -66,7 +66,7 @@ import {
   DragOverEvent, // TypeScript type for when dragging over items
   DragOverlay, // Shows a preview of the item being dragged
   DragStartEvent, // TypeScript type for when drag starts
-  rectIntersection, // Algorithm to detect overlapping elements
+  closestCorners, // Algorithm to detect nearest drop target
   useDroppable, // Hook to make an element accept drops
   useSensor, // Hook to configure input devices
   useSensors, // Hook to combine multiple sensors
@@ -430,6 +430,8 @@ export default function BoardPage() {
     overId: null,
   });
 
+  const originalColumnId = useRef<string | null>(null);
+
   function clearFilters() {
     setFilters({
       priority: [] as string[],
@@ -503,6 +505,8 @@ export default function BoardPage() {
 
     if (task) {
       setActiveTask(task);
+      const col = columns.find((c) => c.tasks.some((t) => t.id === taskId));
+      if (col) originalColumnId.current = col.id;
     }
 
     // Reset last drag tracking
@@ -518,59 +522,97 @@ export default function BoardPage() {
 
     if (activeId === overId) return;
 
-    // Check if this is the same drag operation as last time
-    if (
-      lastDragRef.current.activeId === activeId &&
-      lastDragRef.current.overId === overId
-    ) {
-      return; // Don't update if nothing changed
+    const activeColumn = columns.find((col) =>
+      col.tasks.some((task) => task.id === activeId)
+    );
+    const overColumn = columns.find(
+      (col) => col.id === overId || col.tasks.some((task) => task.id === overId)
+    );
+
+    if (!activeColumn || !overColumn || activeColumn === overColumn) {
+      return;
     }
 
-    // Update last drag tracking
-    lastDragRef.current = { activeId, overId };
+    setColumns((prev) => {
+      const activeItems = activeColumn.tasks;
+      const overItems = overColumn.tasks;
+      const activeIndex = activeItems.findIndex((t) => t.id === activeId);
+      const overIndex = overItems.findIndex((t) => t.id === overId);
 
-    // NOTE: We do NOT update columns state here
-    // handleDragOver should only track cursor position
-    // Actual state updates happen in handleDragEnd
+      let newIndex;
+      if (overColumn.tasks.some((t) => t.id === overId)) {
+        newIndex = overIndex >= 0 ? overIndex : overItems.length + 1;
+      } else {
+        newIndex = overItems.length + 1;
+      }
+
+      return prev.map((c) => {
+        if (c.id === activeColumn.id) {
+          return {
+            ...c,
+            tasks: c.tasks.filter((t) => t.id !== activeId),
+          };
+        } else if (c.id === overColumn.id) {
+          const newTasks = [...c.tasks];
+          const task = activeItems[activeIndex];
+
+          if (!newTasks.find((t) => t.id === task.id)) {
+            if (newIndex >= 0 && newIndex <= newTasks.length) {
+              newTasks.splice(newIndex, 0, task);
+            } else {
+              newTasks.push(task);
+            }
+          }
+
+          return {
+            ...c,
+            tasks: newTasks,
+          };
+        }
+        return c;
+      });
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    setActiveTask(null);
+
     if (!over) return;
 
-    const taskId = active.id as string;
+    const activeId = active.id as string;
     const overId = over.id as string;
 
-    const targetColumn = columns.find((col) => col.id === overId);
-    if (targetColumn) {
-      const sourceColumn = columns.find((col) =>
-        col.tasks.some((task) => task.id === taskId)
-      );
+    const activeColumn = columns.find((col) =>
+      col.tasks.some((task) => task.id === activeId)
+    );
+    const overColumn = columns.find(
+      (col) => col.id === overId || col.tasks.some((task) => task.id === overId)
+    );
 
-      if (sourceColumn && sourceColumn.id !== targetColumn.id) {
-        await moveTask(taskId, targetColumn.id, targetColumn.tasks.length);
-      }
+    if (!activeColumn || !overColumn) return;
+
+    const activeIndex = activeColumn.tasks.findIndex((t) => t.id === activeId);
+    let overIndex = overColumn.tasks.findIndex((t) => t.id === overId);
+
+    if (overColumn.id === overId) {
+      overIndex = overColumn.tasks.length;
     } else {
-      // Check to see if were dropping on another task
-      const sourceColumn = columns.find((col) =>
-        col.tasks.some((task) => task.id === taskId)
-      );
+      if (overIndex < 0) overIndex = overColumn.tasks.length;
+    }
 
-      const targetColumn = columns.find((col) => col.id === overId);
-
-      if (sourceColumn && targetColumn) {
-        const oldIndex = sourceColumn.tasks.findIndex(
-          (task) => task.id === taskId
-        );
-        const newIndex = targetColumn.tasks.findIndex(
-          (task) => task.id === overId
-        );
-
-        if (oldIndex !== newIndex) {
-          await moveTask(taskId, targetColumn.id, newIndex);
+    if (activeColumn.id !== overColumn.id) {
+      await moveTask(activeId, overColumn.id, overIndex);
+    } else {
+      if (originalColumnId.current !== overColumn.id) {
+        await moveTask(activeId, overColumn.id, activeIndex);
+      } else {
+        if (activeIndex !== overIndex) {
+          await moveTask(activeId, activeColumn.id, overIndex);
         }
       }
     }
+    originalColumnId.current = null;
   }
 
   async function handleCreateColumn(e: React.FormEvent) {
@@ -915,7 +957,7 @@ export default function BoardPage() {
 
           <DndContext
             sensors={sensors}
-            collisionDetection={rectIntersection}
+            collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
