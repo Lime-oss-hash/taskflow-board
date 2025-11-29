@@ -127,6 +127,16 @@ export default function DashboardPage() {
     }
   };
 
+  // Stats calculations
+  const totalTasks = boards.reduce((total: number, board: any) => total + (board.taskCount || 0), 0);
+  const activeBoards = boards.filter((board: any) => (board.taskCount || 0) > 0).length;
+  const recentActivity = boards.filter((board: any) => {
+    const updatedAt = new Date(board.updated_at);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    return updatedAt > oneWeekAgo;
+  }).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -185,34 +195,10 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm font-medium text-gray-600">
-                    Recent Activity
+                    Active Boards
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {
-                      boards.filter((board: any) => {
-                        const updatedAt = new Date(board.updated_at);
-                        const oneWeekAgo = new Date();
-                        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                        return updatedAt > oneWeekAgo;
-                      }).length
-                    }
-                  </p>
-                </div>
-                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs sm:text-sm font-medium text-gray-600">
-                    Active Projects
-                  </p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {boards.length}
+                    {activeBoards}
                   </p>
                 </div>
                 <div className="h-10 w-10 sm:h-12 sm:w-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -229,15 +215,28 @@ export default function DashboardPage() {
                     Total Tasks
                   </p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {boards.reduce(
-                      (total: number, board: any) =>
-                        total + (board.taskCount || 0),
-                      0
-                    )}
+                    {totalTasks}
                   </p>
                 </div>
                 <div className="h-10 w-10 sm:h-12 sm:w-12 bg-orange-100 rounded-lg flex items-center justify-center">
                   <CheckSquare className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-gray-600">
+                    Recent Activity
+                  </p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {recentActivity}
+                  </p>
+                </div>
+                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Activity className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                 </div>
               </div>
             </CardContent>
