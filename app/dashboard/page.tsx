@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useBoards } from "@/lib/hooks/useBoards";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Filter, List, Loader2, Plus, Search, Trello, Activity, CheckSquare } from "lucide-react";
+import { Filter, List, Loader2, Plus, Search, Trello, Activity, CheckSquare, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -30,7 +30,7 @@ import { usePlan } from "@/lib/contexts/PlanContext";
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { createBoard, boards, loading, error } = useBoards();
+  const { createBoard, deleteBoard, boards, loading, error } = useBoards();
   const router = useRouter();
   const { isFreeUser } = usePlan();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState<boolean>(false);
   const [isCreating, setIsCreating] = useState<boolean>(false);
   const [newBoardId, setNewBoardId] = useState<string | null>(null);
+  
+  const [boardToDelete, setBoardToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
 
   const [filters, setFilters] = useState({
     search: "",
@@ -109,6 +112,18 @@ export default function DashboardPage() {
         console.error("Creation failed", error);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteBoard = async () => {
+    if (!boardToDelete) return;
+    
+    try {
+      await deleteBoard(boardToDelete);
+      setBoardToDelete(null);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Delete failed", error);
     }
   };
 
@@ -315,6 +330,19 @@ export default function DashboardPage() {
                         <Badge className="text-xs" variant="secondary">
                           {board.taskCount || 0} tasks
                         </Badge>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setBoardToDelete(board.id);
+                                setIsDeleteDialogOpen(true);
+                            }}
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="p-4 sm:p-6">
@@ -374,6 +402,19 @@ export default function DashboardPage() {
                           <Badge className="text-xs" variant="secondary">
                             {board.taskCount || 0} tasks
                           </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setBoardToDelete(board.id);
+                                setIsDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </CardHeader>
                       <CardContent className="p-4 sm:p-6">
@@ -538,6 +579,35 @@ export default function DashboardPage() {
               Cancel
             </Button>
             <Button onClick={() => router.push("/pricing")}>View Plans</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleDeleteBoard();
+            }
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Delete Board</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete this board? This action cannot be undone.
+            </p>
+          </DialogHeader>
+          <div className="flex justify-end space-x-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteBoard}>
+              Delete
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
