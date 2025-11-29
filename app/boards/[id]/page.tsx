@@ -127,6 +127,7 @@ function DroppableColumn({
     },
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   return (
     <div
@@ -191,8 +192,18 @@ function DroppableColumn({
               <form
                 className="space-y-4"
                 onSubmit={async (e) => {
-                  await onCreateTask(column.id, e);
-                  setIsDialogOpen(false);
+                  e.preventDefault();
+                  if (isCreating) return; // Prevent duplicate submissions
+
+                  setIsCreating(true);
+                  try {
+                    await onCreateTask(column.id, e);
+                    setIsDialogOpen(false);
+                  } catch (error) {
+                    console.error("Failed to create task:", error);
+                  } finally {
+                    setIsCreating(false);
+                  }
                 }}
               >
                 <div className="space-y-2">
@@ -202,6 +213,7 @@ function DroppableColumn({
                     name="title"
                     placeholder="Enter task title"
                     required
+                    disabled={isCreating}
                   />
                 </div>
                 <div className="space-y-2">
@@ -211,6 +223,7 @@ function DroppableColumn({
                     name="description"
                     placeholder="Enter task description"
                     rows={3}
+                    disabled={isCreating}
                   />
                 </div>
                 <div className="space-y-2">
@@ -219,11 +232,16 @@ function DroppableColumn({
                     id="assignee"
                     name="assignee"
                     placeholder="Who should do this?"
+                    disabled={isCreating}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="priority">Priority *</Label>
-                  <Select name="priority" defaultValue="medium">
+                  <Select
+                    name="priority"
+                    defaultValue="medium"
+                    disabled={isCreating}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
@@ -237,7 +255,12 @@ function DroppableColumn({
 
                 <div className="space-y-2">
                   <Label htmlFor="dueDate">Due Date</Label>
-                  <Input type="date" id="dueDate" name="dueDate" />
+                  <Input
+                    type="date"
+                    id="dueDate"
+                    name="dueDate"
+                    disabled={isCreating}
+                  />
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
@@ -245,10 +268,13 @@ function DroppableColumn({
                     type="button"
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
+                    disabled={isCreating}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Create Task</Button>
+                  <Button type="submit" disabled={isCreating}>
+                    {isCreating ? "Creating..." : "Create Task"}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
