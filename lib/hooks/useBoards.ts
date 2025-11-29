@@ -260,9 +260,12 @@ export function useBoard(boardId: string) {
 
       // 2. Persist to Supabase
       if (updates.length > 0) {
+        console.log("Persisting task move updates:", updates.length);
         await taskService.updateTasksOrder(supabase!, updates);
+        console.log("Task move persisted successfully");
       }
     } catch (err) {
+      console.error("Failed to move task:", err);
       // Revert on error
       setColumns(previousColumns);
       setError(err instanceof Error ? err.message : "Failed to move task.");

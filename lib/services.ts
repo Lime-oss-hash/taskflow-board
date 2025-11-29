@@ -290,11 +290,23 @@ export const taskService = {
     supabase: SupabaseClient,
     updates: { id: string; column_id: string; sort_order: number }[]
   ) {
-    const { error } = await supabase
-      .from("tasks")
-      .upsert(updates, { onConflict: "id" });
+    // Using Promise.all for parallel updates to ensure reliability
+    // upsert with partial data can be problematic depending on RLS and constraints
+    const promises = updates.map((update) =>
+      supabase
+        .from("tasks")
+        .update({
+          column_id: update.column_id,
+          sort_order: update.sort_order,
+        })
+        .eq("id", update.id)
+    );
 
-    if (error) throw error;
+    const results = await Promise.all(promises);
+
+    // Check for errors in any of the requests
+    const firstError = results.find((r) => r.error)?.error;
+    if (firstError) throw firstError;
   },
 
   async deleteTask(supabase: SupabaseClient, taskId: string): Promise<void> {
