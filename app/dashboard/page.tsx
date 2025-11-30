@@ -41,6 +41,10 @@ export default function DashboardPage() {
   
   const [boardToDelete, setBoardToDelete] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+  
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState<boolean>(false);
+  const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [newBoardColor, setNewBoardColor] = useState("bg-blue-500");
 
   const [filters, setFilters] = useState({
     search: "",
@@ -87,7 +91,7 @@ export default function DashboardPage() {
     });
   }
 
-  const handleCreateBoard = async (e?: React.MouseEvent) => {
+  const handleCreateBoard = async (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -100,11 +104,19 @@ export default function DashboardPage() {
       return;
     }
     
+    if (!newBoardTitle.trim()) return;
+
     try {
       setIsCreating(true);
-      const newBoard = await createBoard({ title: "New Board" });
+      const newBoard = await createBoard({ 
+        title: newBoardTitle,
+        color: newBoardColor 
+      });
       if (newBoard) {
         setNewBoardId(newBoard.id);
+        setIsCreateDialogOpen(false);
+        setNewBoardTitle("");
+        setNewBoardColor("bg-blue-500");
         // Clear highlight after 5 seconds
         setTimeout(() => setNewBoardId(null), 5000);
       }
@@ -286,7 +298,7 @@ export default function DashboardPage() {
                 Filter
               </Button>
 
-              <Button onClick={handleCreateBoard}>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus />
                 Create Board
               </Button>
@@ -369,7 +381,7 @@ export default function DashboardPage() {
 
               <Card
                 className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group"
-                onClick={handleCreateBoard}
+                onClick={() => setIsCreateDialogOpen(true)}
               >
                 <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
                   <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 group-hover:text-blue-600 mb-2" />
@@ -441,7 +453,7 @@ export default function DashboardPage() {
               ))}
               <Card
                 className="mt-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group"
-                onClick={handleCreateBoard}
+                onClick={() => setIsCreateDialogOpen(true)}
               >
                 <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
                   <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 group-hover:text-blue-600 mb-2" />
@@ -559,6 +571,78 @@ export default function DashboardPage() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Board Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Board</DialogTitle>
+            <p className="text-sm text-gray-600">
+              Create a new board to start organizing your tasks.
+            </p>
+          </DialogHeader>
+          <form onSubmit={handleCreateBoard} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="boardTitle">Board Name</Label>
+              <Input
+                id="boardTitle"
+                placeholder="e.g., Project Roadmap"
+                value={newBoardTitle}
+                onChange={(e) => setNewBoardTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Color Mark</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                    "bg-blue-500",
+                    "bg-green-500",
+                    "bg-yellow-500",
+                    "bg-orange-500",
+                    "bg-red-500",
+                    "bg-purple-500",
+                    "bg-pink-500",
+                    "bg-indigo-500",
+                    "bg-gray-500",
+                    "bg-teal-500",
+                    "bg-cyan-500",
+                ].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`w-8 h-8 rounded-full ${color} transition-all ${
+                      newBoardColor === color
+                        ? "ring-2 ring-offset-2 ring-gray-400 scale-110"
+                        : "hover:scale-105"
+                    }`}
+                    onClick={() => setNewBoardColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!newBoardTitle.trim() || isCreating}>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Board"
+                )}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
