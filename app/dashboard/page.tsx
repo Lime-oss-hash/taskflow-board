@@ -153,8 +153,16 @@ export default function DashboardPage() {
   };
 
   // Stats calculations
-  const totalTasks = boards.reduce((total: number, board: BoardWithTaskCount) => total + (board.taskCount || 0), 0);
-  const activeBoards = boards.filter((board: BoardWithTaskCount) => (board.taskCount || 0) > 0).length;
+  const totalTasks = boards.reduce((total: number, board: BoardWithTaskCount) => {
+    const boardTotal = board.columnCounts?.reduce((sum, col) => sum + col.count, 0) || 0;
+    return total + boardTotal;
+  }, 0);
+
+  const activeBoards = boards.filter((board: BoardWithTaskCount) => {
+    const boardTotal = board.columnCounts?.reduce((sum, col) => sum + col.count, 0) || 0;
+    return boardTotal > 0;
+  }).length;
+
   const recentActivity = boards.filter((board: BoardWithTaskCount) => {
     const updatedAt = new Date(board.updated_at);
     const oneWeekAgo = new Date();
