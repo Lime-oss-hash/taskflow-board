@@ -82,7 +82,7 @@ export function BoardCard({ board, isNew, onDelete }: BoardCardProps) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 -mr-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-6 w-6 -mr-2 text-gray-400 hover:text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                     onClick={onDelete}
                 >
                     <Trash2 className="w-4 h-4" />
