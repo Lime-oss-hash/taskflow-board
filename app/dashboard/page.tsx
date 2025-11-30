@@ -361,12 +361,14 @@ export default function DashboardPage() {
               })}
 
               <Card
-                className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group"
+                className="hover:shadow-lg transition-all duration-500 cursor-pointer group relative overflow-hidden flex flex-col h-full gap-0 items-center justify-center"
                 onClick={() => setIsCreateDialogOpen(true)}
               >
-                <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
-                  <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 group-hover:text-blue-600 mb-2" />
-                  <p className="text-sm sm:text-base text-gray-600 group-hover:text-blue-600 font-medium">
+                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 group-hover:bg-blue-50 transition-colors">
+                    <Plus className="h-6 w-6 text-gray-400 group-hover:text-blue-600" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-600 group-hover:text-blue-600">
                     Create new board
                   </p>
                 </CardContent>
@@ -395,12 +397,14 @@ export default function DashboardPage() {
               })}
 
               <Card
-                className="mt-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer group"
+                className="mt-4 hover:shadow-lg transition-all duration-500 cursor-pointer group relative overflow-hidden flex flex-col h-full gap-0 items-center justify-center"
                 onClick={() => setIsCreateDialogOpen(true)}
               >
-                <CardContent className="p-4 sm:p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
-                  <Plus className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400 group-hover:text-blue-600 mb-2" />
-                  <p className="text-sm sm:text-base text-gray-600 group-hover:text-blue-600 font-medium">
+                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3 group-hover:bg-blue-50 transition-colors">
+                    <Plus className="h-6 w-6 text-gray-400 group-hover:text-blue-600" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-600 group-hover:text-blue-600">
                     Create new board
                   </p>
                 </CardContent>
