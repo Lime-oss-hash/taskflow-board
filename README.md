@@ -17,7 +17,6 @@ A modern, full-featured project management application built with Next.js, featu
 - [Dependencies](#-dependencies)
 - [Environment Variables](#-environment-variables)
 - [Contributing](#-contributing)
-- [License](#-license)
 
 ## 🎯 Project Overview
 
