@@ -102,6 +102,11 @@ taskflow-board/
 │   │   └── globals.css             # Global styles
 │   │
 │   ├── components/                  # React components
+│   │   ├── board/                  # Board-related components
+│   │   │   ├── DroppableColumn.tsx # Droppable column with task list
+│   │   │   ├── SortableTask.tsx    # Draggable task card
+│   │   │   ├── TaskOverlay.tsx     # Drag overlay preview
+│   │   │   └── index.ts            # Barrel exports
 │   │   ├── ui/                     # shadcn/ui components
 │   │   │   ├── button.tsx          # Button component
 │   │   │   ├── card.tsx            # Card component
@@ -111,6 +116,7 @@ taskflow-board/
 │   │   │   ├── select.tsx          # Select dropdown
 │   │   │   ├── textarea.tsx        # Textarea component
 │   │   │   └── badge.tsx           # Badge component
+│   │   ├── BoardCard.tsx           # Board card for dashboard
 │   │   └── navbar.tsx              # Navigation bar
 │   │
 │   ├── lib/                        # Library and utilities
@@ -143,16 +149,18 @@ taskflow-board/
 
 ### Key Files and Their Purpose
 
-| File                       | Purpose                                           |
-| -------------------------- | ------------------------------------------------- |
-| `app/page.tsx`             | Landing page with features showcase and CTA       |
-| `app/dashboard/page.tsx`   | Dashboard showing all boards with task counts     |
-| `app/boards/[id]/page.tsx` | Main board view with drag-and-drop functionality  |
-| `lib/services.ts`          | Service layer for API calls to Supabase           |
-| `lib/supabase/models.ts`   | TypeScript interfaces for Board, Column, and Task |
-| `lib/hooks/useBoards.ts`   | Custom hook for board operations                  |
-| `components/navbar.tsx`    | Navigation component with authentication          |
-| `components/ui/*`          | Reusable UI components from shadcn/ui             |
+| File                       | Purpose                                            |
+| -------------------------- | -------------------------------------------------- |
+| `app/page.tsx`             | Landing page with features showcase and CTA        |
+| `app/dashboard/page.tsx`   | Dashboard showing all boards with task counts      |
+| `app/boards/[id]/page.tsx` | Main board view with drag-and-drop functionality   |
+| `lib/services.ts`          | Service layer for API calls to Supabase            |
+| `lib/supabase/models.ts`   | TypeScript interfaces for Board, Column, and Task  |
+| `lib/hooks/useBoards.ts`   | Custom hook for board operations                   |
+| `lib/utils.ts`             | Shared utilities (cn, getPriorityColor, etc.)      |
+| `components/board/*`       | Extracted board components (Column, Task, Overlay) |
+| `components/navbar.tsx`    | Navigation component with authentication           |
+| `components/ui/*`          | Reusable UI components from shadcn/ui              |
 
 ## 🚀 Installation
 
