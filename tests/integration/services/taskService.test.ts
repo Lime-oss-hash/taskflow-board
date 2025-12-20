@@ -166,7 +166,9 @@ describe("taskService", () => {
         string,
         ReturnType<typeof vi.fn>
       >;
-      supabase.upsert.mockResolvedValueOnce({ error: null });
+      // The implementation uses Promise.all with individual update calls
+      // Each update call chains: from().update().eq()
+      supabase.eq.mockResolvedValue({ error: null });
 
       await taskService.updateTasksOrder(
         supabase as unknown as Parameters<
@@ -175,8 +177,10 @@ describe("taskService", () => {
         updates
       );
 
+      // Should call from("tasks") for each update
       expect(supabase.from).toHaveBeenCalledWith("tasks");
-      expect(supabase.upsert).toHaveBeenCalledWith(updates);
+      expect(supabase.update).toHaveBeenCalledTimes(3);
+      expect(supabase.eq).toHaveBeenCalledTimes(3);
     });
 
     it("handles empty updates array", async () => {

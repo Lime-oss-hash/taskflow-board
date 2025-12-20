@@ -58,7 +58,7 @@ test.describe("Accessibility Audits", () => {
     test("should have visible focus indicators", async ({ page }) => {
       await page.goto("/");
 
-      // Tab through interactive elements
+      // Tab through interactive elements to verify they can receive focus
       const interactiveElements = await page
         .locator("button, a, input, select, textarea")
         .all();
@@ -66,21 +66,13 @@ test.describe("Accessibility Audits", () => {
       for (const element of interactiveElements.slice(0, 5)) {
         await element.focus();
 
-        // Check that element has focus-visible styles
-        const outlineStyle = await element.evaluate(
-          (el) => window.getComputedStyle(el).outline
+        // Verify element is focused (basic check that focus works)
+        const isFocused = await element.evaluate(
+          (el) => document.activeElement === el
         );
-        const boxShadow = await element.evaluate(
-          (el) => window.getComputedStyle(el).boxShadow
-        );
-
-        // Should have some visible focus indicator
-        const hasFocusIndicator =
-          (outlineStyle !== "none" && outlineStyle !== "") ||
-          (boxShadow !== "none" && boxShadow !== "");
-
-        // Note: Some elements may use other focus styles
-        // This is a basic check
+        // Note: Some elements may use various focus styles (outline, box-shadow, etc.)
+        // This test just verifies elements can receive focus
+        expect(isFocused).toBe(true);
       }
     });
 

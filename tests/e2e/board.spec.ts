@@ -158,7 +158,6 @@ test.describe("Board Page", () => {
 
       // Get source task
       const task = page.locator('[data-testid="task-card"]').first();
-      const taskText = await task.textContent();
 
       // Get target column
       const targetColumn = page

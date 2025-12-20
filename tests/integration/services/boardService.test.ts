@@ -1,20 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { boardService, boardDataService } from "@/lib/services";
-import { server } from "@/tests/mocks/server";
-import { http, HttpResponse } from "msw";
-
-// Mock Supabase client
-const mockSupabase = {
-  from: vi.fn(() => mockSupabase),
-  select: vi.fn(() => mockSupabase),
-  insert: vi.fn(() => mockSupabase),
-  update: vi.fn(() => mockSupabase),
-  delete: vi.fn(() => mockSupabase),
-  eq: vi.fn(() => mockSupabase),
-  order: vi.fn(() => mockSupabase),
-  single: vi.fn(() => mockSupabase),
-  then: vi.fn(),
-};
 
 // Create a chainable mock
 function createMockSupabase() {
@@ -296,7 +281,7 @@ describe("boardService", () => {
 describe("boardDataService", () => {
   describe("getBoardWithColumns", () => {
     it("fetches board with its columns", async () => {
-      const mockData = {
+      const mockBoard = {
         id: "board-1",
         title: "Test Board",
         description: "Test",
@@ -304,31 +289,43 @@ describe("boardDataService", () => {
         user_id: "user-1",
         created_at: "2025-01-01T00:00:00Z",
         updated_at: "2025-01-01T00:00:00Z",
-        columns: [
-          {
-            id: "col-1",
-            title: "To Do",
-            sort_order: 0,
-            board_id: "board-1",
-            created_at: "2025-01-01T00:00:00Z",
-            user_id: "user-1",
-          },
-          {
-            id: "col-2",
-            title: "Done",
-            sort_order: 1,
-            board_id: "board-1",
-            created_at: "2025-01-01T00:00:00Z",
-            user_id: "user-1",
-          },
-        ],
       };
+
+      const mockColumns = [
+        {
+          id: "col-1",
+          title: "To Do",
+          sort_order: 0,
+          board_id: "board-1",
+          created_at: "2025-01-01T00:00:00Z",
+          user_id: "user-1",
+        },
+        {
+          id: "col-2",
+          title: "Done",
+          sort_order: 1,
+          board_id: "board-1",
+          created_at: "2025-01-01T00:00:00Z",
+          user_id: "user-1",
+        },
+      ];
 
       const supabase = createMockSupabase() as Record<
         string,
         ReturnType<typeof vi.fn>
       >;
-      supabase.single.mockResolvedValueOnce({ data: mockData, error: null });
+
+      // getBoardWithColumns calls three services in sequence:
+      // 1. boardService.getBoard -> from("boards").select("*").eq().single()
+      // 2. columnService.getColumns -> from("columns").select("*").eq().order()
+      // 3. taskService.getTasksByBoard -> from("tasks").select().eq().order()
+
+      // Mock single() for getBoard
+      supabase.single.mockResolvedValueOnce({ data: mockBoard, error: null });
+      // Mock order() for getColumns
+      supabase.order.mockResolvedValueOnce({ data: mockColumns, error: null });
+      // Mock order() for getTasksByBoard (returns empty tasks)
+      supabase.order.mockResolvedValueOnce({ data: [], error: null });
 
       const result = await boardDataService.getBoardWithColumns(
         supabase as unknown as Parameters<
@@ -353,17 +350,31 @@ describe("boardDataService", () => {
         id: "board-new",
         title: "New Board",
         description: null,
-        color: "blue",
+        color: "bg-blue-500",
         user_id: "user-1",
         created_at: "2025-01-01T00:00:00Z",
         updated_at: "2025-01-01T00:00:00Z",
       };
 
+      const createdColumn = {
+        id: "col-new",
+        title: "To Do",
+        sort_order: 0,
+        board_id: "board-new",
+        user_id: "user-1",
+        created_at: "2025-01-01T00:00:00Z",
+      };
+
+      // First single() call is for createBoard
       supabase.single.mockResolvedValueOnce({
         data: createdBoard,
         error: null,
       });
-      supabase.select.mockResolvedValueOnce({ error: null });
+      // Following 4 single() calls are for creating default columns
+      supabase.single.mockResolvedValue({
+        data: createdColumn,
+        error: null,
+      });
 
       const result = await boardDataService.createBoardWithDefaultColumns(
         supabase as unknown as Parameters<
@@ -376,6 +387,8 @@ describe("boardDataService", () => {
       );
 
       expect(result.title).toBe("New Board");
+      // Board + 4 columns = 5 inserts total
+      expect(supabase.insert).toHaveBeenCalledTimes(5);
     });
   });
 });
