@@ -28,7 +28,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         run: npm run lint
@@ -47,12 +47,11 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run unit tests
         run: npm run test:unit
 
-  # Integration tests - optional for now (some mock assertions need refinement)
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -67,13 +66,11 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run integration tests
         run: npx vitest run tests/integration || true
 
-  # E2E tests - require secrets to be configured
-  # Note: These tests will gracefully fail if secrets aren't configured
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -88,7 +85,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -123,7 +120,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run TypeScript type check
         run: npx tsc --noEmit --skipLibCheck
@@ -143,12 +140,11 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build application
         run: npm run build
 
-  # All checks passed
   all-checks-passed:
     name: All Checks Passed
     runs-on: ubuntu-latest
